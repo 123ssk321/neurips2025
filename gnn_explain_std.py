@@ -56,12 +56,11 @@ def evaluation_df(eval_data, explainer_names, model_names, dataset_names, metric
     return dataframe
 
 
-def main(task, model, dataset, explainer, num_runs):
+def main(task, model, dataset, explainer, num_runs, std_idx):
     print(f'NUMBER OF EXPERIMENTS: {num_runs}')
-    cluster = True
-    dataset_path = '/data/f.caldas/gnn/datasets/' if cluster else 'datasets/'
-    model_save_path = '/data/f.caldas/gnn/models/' if cluster else 'models/'
-    metrics_save_path = '/data/f.caldas/gnn/eval_metrics/' if cluster else 'eval_metrics/'
+    dataset_path = 'datasets/'
+    model_save_path = 'models/'
+    metrics_save_path = 'eval_metrics/'
     save_eval_metrics = True
     model_names = model_store.model_names
     explainer_names = explainer_store.explainer_names
@@ -74,10 +73,8 @@ def main(task, model, dataset, explainer, num_runs):
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     explainer_config = ExplainerConfig(explanation_type='phenomenon', node_mask_type='object', edge_mask_type='object')
     metric_names = ['accuracy', 'precision', 'recall', 'iou', 'fid+', 'fid-', 'unfaithfulness', 'characterization_score', 'inference_time']
-    stds_str = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
-    std_str = None#stds_str[0]
-    num_nc_datasets = 2
-    num_runs = 1
+    stds = ['00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '10']
+    std_str = stds[std_idx]
     print(f'STANDARD DEVIATION: {std_str}')
     if task in ['nc', 'all']:
         nc_datasets = data_store.get_nc_dataset(dataset_path, 'all', std_str=std_str, new=False)
@@ -111,10 +108,8 @@ def main(task, model, dataset, explainer, num_runs):
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_nc_explainer(model_save_path, 'random_explainer', explainer_config, nc_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['random_explainer'], model_names, data_store.nc_datasets[:num_nc_datasets],
-                                        metric_names)
+                eval_data = evaluate_nc_explainer(model_save_path, 'random_explainer', explainer_config, nc_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['random_explainer'], model_names, data_store.nc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
@@ -126,23 +121,19 @@ def main(task, model, dataset, explainer, num_runs):
                 print(f'Run {run}...')
                 eval_data = evaluate_gc_explainer(model_save_path, 'random_explainer', explainer_config, gc_datasets,
                                                   metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['random_explainer'], model_names, data_store.gc_datasets[1:],
-                                        metric_names)
+                eval_df = evaluation_df(eval_data, ['random_explainer'], model_names, data_store.gc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
             if save_eval_metrics:
-                #eval_df.to_csv(f'{metrics_save_path}random_explainer_gc_metrics_std_{std_str}.csv')
-                eval_df.to_csv(f'{metrics_save_path}random_explainer_gc_metrics_mutag.csv')
+                eval_df.to_csv(f'{metrics_save_path}random_explainer_gc_metrics_std_{std_str}.csv')
 
         if task in ['lp', 'all']:
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_lp_explainer(model_save_path, 'random_explainer', explainer_config, lp_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['random_explainer'], model_names, data_store.lp_datasets[2:],
-                                        metric_names)
+                eval_data = evaluate_lp_explainer(model_save_path, 'random_explainer', explainer_config, lp_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['random_explainer'], model_names, data_store.lp_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
@@ -161,9 +152,8 @@ def main(task, model, dataset, explainer, num_runs):
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_nc_explainer(model_save_path, 'gnnexplainer', explainer_config, nc_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['gnnexplainer'], model_names, data_store.nc_datasets[:num_nc_datasets], metric_names)
+                eval_data = evaluate_nc_explainer(model_save_path, 'gnnexplainer', explainer_config, nc_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['gnnexplainer'], model_names, data_store.nc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
@@ -173,23 +163,19 @@ def main(task, model, dataset, explainer, num_runs):
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_gc_explainer(model_save_path, 'gnnexplainer', explainer_config, gc_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['gnnexplainer'], model_names, data_store.gc_datasets[1:], metric_names)
+                eval_data = evaluate_gc_explainer(model_save_path, 'gnnexplainer', explainer_config, gc_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['gnnexplainer'], model_names, data_store.gc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
             if save_eval_metrics:
-                #eval_df.to_csv(f'{metrics_save_path}gnnexplainer_gc_metrics_std_{std_str}.csv')
-                eval_df.to_csv(f'{metrics_save_path}gnnexplainer_gc_metrics_mutag.csv')
+                eval_df.to_csv(f'{metrics_save_path}gnnexplainer_gc_metrics_std_{std_str}.csv')
         if task in ['lp', 'all']:
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_lp_explainer(model_save_path, 'gnnexplainer', explainer_config, lp_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['gnnexplainer'], model_names, data_store.lp_datasets[2:],
-                                        metric_names)
+                eval_data = evaluate_lp_explainer(model_save_path, 'gnnexplainer', explainer_config, lp_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['gnnexplainer'], model_names, data_store.lp_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
@@ -208,9 +194,8 @@ def main(task, model, dataset, explainer, num_runs):
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_nc_explainer(model_save_path, 'pgexplainer', explainer_config, nc_datasets[:2],
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['pgexplainer'], model_names, data_store.nc_datasets[:num_nc_datasets], metric_names)
+                eval_data = evaluate_nc_explainer(model_save_path, 'pgexplainer', explainer_config, nc_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['pgexplainer'], model_names, data_store.nc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
@@ -220,23 +205,20 @@ def main(task, model, dataset, explainer, num_runs):
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_gc_explainer(model_save_path, 'pgexplainer', explainer_config, gc_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['pgexplainer'], model_names, data_store.gc_datasets[1:], metric_names)
+                eval_data = evaluate_gc_explainer(model_save_path, 'pgexplainer', explainer_config, gc_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['pgexplainer'], model_names, data_store.gc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
             if save_eval_metrics:
-                #eval_df.to_csv(f'{metrics_save_path}pgexplainer_gc_metrics_std_{std_str}.csv')
-                eval_df.to_csv(f'{metrics_save_path}pgexplainer_gc_metrics_mutag.csv')
+                eval_df.to_csv(f'{metrics_save_path}pgexplainer_gc_metrics_std_{std_str}.csv')
         if task in ['lp', 'all']:
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_lp_explainer(model_save_path, 'pgexplainer', explainer_config, lp_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['pgexplainer'], model_names, data_store.lp_datasets[2:],
-                                        metric_names)
+                eval_data = evaluate_lp_explainer(model_save_path, 'pgexplainer', explainer_config, lp_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['pgexplainer'], model_names, data_store.lp_datasets,
+                metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
@@ -252,45 +234,35 @@ def main(task, model, dataset, explainer, num_runs):
         print('Evaluating SubgraphX...')
         sgx_start_time = time.time()
         if task in ['nc', 'all']:
-            # did = 0
-            # nc_dataset = [nc_datasets[did]]
-            # dataset_name = nc_dataset[0][0]
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_nc_explainer(model_save_path, 'subgraphx', explainer_config, nc_datasets,
-                                                 metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['subgraphx'], model_names, data_store.nc_datasets[:num_nc_datasets], metric_names)
+                eval_data = evaluate_nc_explainer(model_save_path, 'subgraphx', explainer_config, nc_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['subgraphx'], model_names, data_store.nc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
-                # eval_data = evaluate_nc_explainer(model_save_path, 'subgraphx', explainer_config, nc_dataset,
-                #                                   metric_names)
-                # eval_df = evaluation_df(eval_data, ['subgraphx'], model_names, [dataset_name], metric_names)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
             if save_eval_metrics:
-                #eval_df.to_csv(f'{metrics_save_path}subgraphX{std_str}_nc_metrics_{dataset_name}_{run}.csv')
                 eval_df.to_csv(f'{metrics_save_path}subgraphX_nc_metrics_std_{std_str}.csv')
 
         if task in ['gc', 'all']:
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_gc_explainer(model_save_path, 'subgraphx', explainer_config, gc_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['subgraphx'], model_names, data_store.gc_datasets[1:], metric_names)
+                eval_data = evaluate_gc_explainer(model_save_path, 'subgraphx', explainer_config, gc_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['subgraphx'], model_names, data_store.gc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
             if save_eval_metrics:
-                #eval_df.to_csv(f'{metrics_save_path}subgraphx_gc_metrics_std_{std_str}.csv')
-                eval_df.to_csv(f'{metrics_save_path}subgraphx_gc_metrics_mutag.csv')
+                eval_df.to_csv(f'{metrics_save_path}subgraphx_gc_metrics_std_{std_str}.csv')
+                
         if task in ['lp', 'all']:
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_lp_explainer(model_save_path, 'subgraphx', explainer_config, lp_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['subgraphx'], model_names, data_store.lp_datasets[2:],
+                eval_data = evaluate_lp_explainer(model_save_path, 'subgraphx', explainer_config, lp_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['subgraphx'], model_names, data_store.lp_datasets,
                                         metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
@@ -311,9 +283,8 @@ def main(task, model, dataset, explainer, num_runs):
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_nc_explainer(model_save_path, 'ciexplainer', explainer_config, nc_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['ciexplainer'], model_names, data_store.nc_datasets[:num_nc_datasets], metric_names)
+                eval_data = evaluate_nc_explainer(model_save_path, 'ciexplainer', explainer_config, nc_datasets,metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['ciexplainer'], model_names, data_store.nc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
 
@@ -324,30 +295,24 @@ def main(task, model, dataset, explainer, num_runs):
             eval_dfs = []
             for run in range(num_runs):
                 print(f'Run {run}...')
-                eval_data = evaluate_gc_explainer(model_save_path, 'ciexplainer', explainer_config, gc_datasets,
-                                                  metric_names, std=std_str)
-                eval_df = evaluation_df(eval_data, ['ciexplainer'], model_names, data_store.gc_datasets[1:], metric_names)
+                eval_data = evaluate_gc_explainer(model_save_path, 'ciexplainer', explainer_config, gc_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['ciexplainer'], model_names, data_store.gc_datasets, metric_names)
                 eval_df['run'] = run
                 eval_dfs.append(eval_df)
             eval_df = pd.concat(eval_dfs, ignore_index=True)
             if save_eval_metrics:
-                #eval_df.to_csv(f'{metrics_save_path}ciexplainer_gc_metrics_std_{std_str}.csv')
-                eval_df.to_csv(f'{metrics_save_path}ciexplainer_gc_metrics_mutag.csv')
+                eval_df.to_csv(f'{metrics_save_path}ciexplainer_gc_metrics_std_{std_str}.csv')
         if task in ['lp', 'all']:
-            with torch.no_grad():
-                eval_dfs = []
-                for run in range(num_runs):
-                    print(f'Run {run}...')
-                    eval_data = evaluate_lp_explainer(model_save_path, 'ciexplainer', explainer_config, lp_datasets,
-                                                      metric_names, std=std_str)
-                    eval_df = evaluation_df(eval_data, ['ciexplainer'], model_names, data_store.lp_datasets[2:],
-                                             metric_names)
-                    eval_df['run'] = run
-                    eval_dfs.append(eval_df)
-                eval_df = pd.concat(eval_dfs, ignore_index=True)
-                if save_eval_metrics:
-                    eval_df.to_csv(f'{metrics_save_path}ciexplainer_lp_metrics_std_{std_str}.csv')
-                    torch.cuda.empty_cache()
+            eval_dfs = []
+            for run in range(num_runs):
+                print(f'Run {run}...')
+                eval_data = evaluate_lp_explainer(model_save_path, 'ciexplainer', explainer_config, lp_datasets, metric_names, std=std_str)
+                eval_df = evaluation_df(eval_data, ['ciexplainer'], model_names, data_store.lp_datasets, metric_names)
+                eval_df['run'] = run
+                eval_dfs.append(eval_df)
+            eval_df = pd.concat(eval_dfs, ignore_index=True)
+            if save_eval_metrics:
+                eval_df.to_csv(f'{metrics_save_path}ciexplainer_lp_metrics_std_{std_str}.csv')
             ci_end_time = time.time()
             ci_elapsed = (ci_end_time - ci_start_time) / 60
             print(f'CIExplainer took {ci_elapsed:.2f} minutes')
@@ -369,5 +334,6 @@ if __name__ == '__main__':
     parser.add_argument('--explainer', type=str, default='all',
                         help='Explainer to use: random, gnnexplainer, pgexplainer, subgraphX, ciexplainer, or all.')
     parser.add_argument('--num_runs', type=int, default=10, help='Number of runs to perform.')
+    parser.add_argument('--std_idx', type=int, default=0, help='Index of the standard deviation to use (0-10).')
     args = parser.parse_args()
-    main(args.task, args.model, args.dataset, args.explainer, args.num_runs)
+    main(args.task, args.model, args.dataset, args.explainer, args.num_runs, args.std_idx)

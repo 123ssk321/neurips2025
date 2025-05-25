@@ -48,11 +48,13 @@ def get_gc_dataset(dataset_path, dataset_name, std=0.1, **kwargs):
 
 def get_lp_dataset(dataset_path, dataset_name, std='00'):
     if dataset_name in lp_datasets:
-        return lp_pth_to_pyg_data(f'{dataset_path}{dataset_name}', dataset_name, std)
+        path = f'{dataset_path}{dataset_name}/'
+        return lp_pth_to_pyg_data(f'{path}{dataset_name}', dataset_name, std)
     if dataset_name == 'all':
         datasets = []
         for dataset_name in lp_datasets:
-            train_data, val_data, test_data = lp_pth_to_pyg_data(f'{dataset_path}{dataset_name}', dataset_name, std)
+            path = f'{dataset_path}{dataset_name}/'
+            train_data, val_data, test_data = lp_pth_to_pyg_data(f'{path}{dataset_name}', dataset_name, std)
             datasets.append((dataset_name, train_data, val_data, test_data))
         return datasets
 

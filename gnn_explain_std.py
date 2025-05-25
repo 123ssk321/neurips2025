@@ -17,7 +17,6 @@ from ciexplainer import CIExplainer
 from explain_nc import evaluate_nc_explainer
 from explain_gc import evaluate_gc_explainer
 from explain_lp import evaluate_lp_explainer
-from graph_classification import default_hyperparameters as gc_default_hyperparameters
 from utils import setup_models
 
 
@@ -89,13 +88,13 @@ def main(task, model, dataset, explainer, num_runs, std_idx):
                     data.edge_mask = torch.logical_and(data.edge_index[0] >= 20, data.edge_index[1] >= 20)
                 data_list[i] = data.to(device)
             #random.shuffle(data_list)
-            train_size = int(gc_default_hyperparameters['train_ratio'] * len(data_list))
-            val_size = int(gc_default_hyperparameters['val_ratio'] * len(data_list))
+            train_size = int(0.8* len(data_list))
+            val_size = int(0.1 * len(data_list))
             test_data_list = data_list[train_size + val_size:]
             gc_datasets[i] = (dataset_name, test_data_list, num_classes)
 
     if task in ['lp', 'all']:
-        lp_datasets = data_store.get_lp_dataset(dataset_path, 'all', std_str=std_str, explain=True)
+        lp_datasets = data_store.get_lp_dataset(dataset_path, 'all', std=std_str)
         for idx, (dataset_name, train_data, val_data, test_data) in enumerate(lp_datasets):
             lp_datasets[idx] = (dataset_name, train_data.to(device), val_data.to(device), test_data.to(device))
 

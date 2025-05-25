@@ -98,8 +98,8 @@ def get_pgexplainer(explainer_config, model, model_config, **kwargs):
                 best_loss = loss
 
     elif model_config.task_level == ModelTaskLevel.edge:
-        num_indices = edge_label_indices.size(1)
         edge_label_indices = kwargs.get('edge_label_indices', None)
+        num_indices = edge_label_indices.size(1)
         for epoch in range(epochs):
             loss = 0
             for idx in range(num_indices):

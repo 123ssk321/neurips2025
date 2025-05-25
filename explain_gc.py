@@ -80,12 +80,12 @@ def evaluate_gc_explainer(model_path, explainer_name, explainer_config, gc_datas
         gc_dataset_start_time = time.time()
         print(f'{"-" * 3} Evaluating {explainer_name} explainer on {dataset_name} dataset...')
 
-        gc_models = get_gnn(model_path, 'gc', 'all', dataset_name, std='none' if dataset_name=='mutag' else std)
+        gc_models = get_gnn(model_path, 'gc', 'all', dataset_name, std='none' if dataset_name =='mutag' else std)
         gc_models = setup_models(gc_models, test_data_list[0].x.device)
 
         for model_name, model in gc_models:
             gc_model_start_time = time.time()
-            model_name = f'{model_name}-{std}'
+            model_name = f'{model_name}-{std}' if dataset_name != 'mutag' else model_name
             print(f'{"-" * 5} Evaluating {explainer_name} explainer on {model_name} model...')
             if (explainer_name, model_name) not in exp_eval_metrics:
                 exp_eval_metrics[(explainer_name, model_name)] = {}

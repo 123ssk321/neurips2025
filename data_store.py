@@ -18,14 +18,14 @@ normal_distribution = {'std': 0.1}
 def get_nc_dataset(dataset_path, dataset_name, std=0.1, new=True, std_str=''):
     normal_distribution['std'] = std
     if dataset_name in nc_datasets:
-        dataset_path = f'{dataset_path}{dataset_name}/'
+        path = f'{dataset_path}{dataset_name}/'
         return nc_syn_pkl_to_pyg_data(f'{dataset_path}{dataset_name}', dataset_name,
                                       std=std_str, new=new)
     if dataset_name == 'all':
         datasets = []
         for dataset_name in nc_datasets:
-            dataset_path = f'{dataset_path}{dataset_name}/'
-            dataset = nc_syn_pkl_to_pyg_data(f'{dataset_path}{dataset_name}', dataset_name,
+            path = f'{dataset_path}{dataset_name}/'
+            dataset = nc_syn_pkl_to_pyg_data(f'{path}{dataset_name}', dataset_name,
                                              std=std_str, new=new)
             datasets.append((dataset_name, dataset))
         return datasets
@@ -34,13 +34,13 @@ def get_nc_dataset(dataset_path, dataset_name, std=0.1, new=True, std_str=''):
 def get_gc_dataset(dataset_path, dataset_name, std=0.1, **kwargs):
     normal_distribution['std'] = std
     if dataset_name in gc_datasets:
-        dataset_path = f'{dataset_path}{dataset_name}/'
-        return gc_pkl_to_pyg_data(f'{dataset_path}{dataset_name}', dataset_name, **kwargs)
+        path = f'{dataset_path}{dataset_name}/'
+        return gc_pkl_to_pyg_data(f'{path}{dataset_name}', dataset_name, **kwargs)
     if dataset_name == 'all':
         datasets = []
         for dataset_name in gc_datasets:
-            dataset_path = f'{dataset_path}{dataset_name}/'
-            dataset, num_classes = gc_pkl_to_pyg_data(f'{dataset_path}{dataset_name}', dataset_name,
+            path = f'{dataset_path}{dataset_name}/'
+            dataset, num_classes = gc_pkl_to_pyg_data(f'{path}{dataset_name}', dataset_name,
                                                        **kwargs)
             datasets.append((dataset_name, dataset, num_classes))
         return datasets
@@ -202,7 +202,9 @@ def nc_syn_pkl_to_pyg_data(syn_dataset_path, dataset_name, normal_features=True,
         pyg.data.Data: PyG Data object containing the dataset.
     """
     if std is not None and not new:
-        data = torch.load(f'{syn_dataset_path}{std}.pkl')
+        data = torch.load(f'{syn_dataset_path}{std}.pth')
+        print('$' * 101)
+        print(f'Loading {dataset_name} dataset with {std} standard deviation from {syn_dataset_path}{std}.pth')
         print(f'Number of PyTorch Geometric Data object (undirected) edges: {data.num_edges}')
         print(f'Used feature matrix shape: {data.x.shape}')
         print(f'Average node degree: {data.num_edges / data.num_nodes:.2f}')
@@ -273,8 +275,9 @@ def gc_pkl_to_pyg_data(syn_dataset_path, dataset_name, normal_features=True, **k
     explain = kwargs.get('explain', False)
     std_str = kwargs.get('std_str', None)
     if explain and ('mu' in dataset_name):
-        return explain_mutag_pkl_to_pyg_data(syn_dataset_path, dataset_name, normal_features)
+        return explain_mutag_pkl_to_pyg_data(syn_dataset_path, dataset_name)
     elif std_str is not None:
+        print(f'Loading {dataset_name} dataset with {std_str} standard deviation from {syn_dataset_path}{std_str}.pth')
         data_list = torch.load(f'{syn_dataset_path}{std_str}.pth')
         num_classes = 2
         return data_list, num_classes
@@ -316,9 +319,9 @@ def gc_pkl_to_pyg_data(syn_dataset_path, dataset_name, normal_features=True, **k
         return data_list, num_classes
 
 
-def explain_mutag_pkl_to_pyg_data(syn_dataset_path, dataset_name, normal_features=True):
+def explain_mutag_pkl_to_pyg_data(syn_dataset_path, dataset_name):
     edge_lists, graph_labels, edge_label_lists, node_label_lists = get_graph_data(dataset_name)
-    with open(syn_dataset_path, 'rb') as f:
+    with open(f'{syn_dataset_path}.pkl', 'rb') as f:
         adj, x, y = pkl.load(f)
 
     # only consider the mutagen graphs with NO2 and NH2.
@@ -359,10 +362,7 @@ def explain_mutag_pkl_to_pyg_data(syn_dataset_path, dataset_name, normal_feature
         data = pyg.data.Data(x=x, edge_index=edge_index, y=y, edge_mask=edge_label)
         data.num_classes = num_classes
         data.num_nodes = x.size(0)
-        if normal_features:
-            data.x = nc_normal_feature_matrix(data, task='graph')
-        else:
-            data.x = x
+        data.x = x
 
         data_list.append(data)
     return data_list, num_classes

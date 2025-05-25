@@ -146,7 +146,7 @@ def get_ciexplainer(explainer_config, model, model_config, **kwargs):
     elif dataset_name == 'ba_2motif':
         l = 25
     else:#MUTAG
-        l = data.x.size(0)
+        l = data[0].x.size(0)
     
     device = model.device
     

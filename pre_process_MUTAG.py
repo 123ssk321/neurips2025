@@ -6,7 +6,7 @@ from scipy.sparse import coo_matrix
 import sys
 
 def get_graph_data(dataset):
-    pri = 'datasets/'+'/'+dataset+'_'
+    pri = 'datasets/'+dataset+'/'+dataset+'_'
 
     file_edges = pri+'A.txt'
     # file_edge_labels = pri+'edge_labels.txt'
